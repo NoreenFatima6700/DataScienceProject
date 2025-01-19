@@ -1,0 +1,71 @@
+import pandas as pd
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import nltk
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report, accuracy_score
+
+nltk.download('punkt')        # Required for `word_tokenize`
+nltk.download('stopwords')    # Required for `stopwords`
+nltk.download('wordnet')      # Required for `WordNetLemmatizer`
+
+# 1. Text Preprocessing
+
+data = pd.read_csv('D:\\Others\\Data_Science\\Python\\IMDB_Dataset.csv')
+
+# Tokenize, remove stopwords, and lemmatize
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+
+def preprocess_text(text):
+    tokens = word_tokenize(text.lower())  # Tokenize and convert to lowercase
+    tokens = [word for word in tokens if word.isalpha()]  # Remove non-alphabetic tokens
+    tokens = [word for word in tokens if word not in stop_words]  # Remove stopwords
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]  # Lemmatize
+    return ' '.join(tokens)
+
+# Apply preprocessing
+data['cleaned_review'] = data['review'].apply(preprocess_text)
+
+# 2. Feature Engineering
+
+# TF-IDF Vectorization
+tfidf = TfidfVectorizer(max_features=5000)  # Use top 5000 features
+X = tfidf.fit_transform(data['cleaned_review']).toarray()
+
+# Encode target labels
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+y = le.fit_transform(data['sentiment'])  # 'positive' -> 1, 'negative' -> 0
+
+
+# 3. Model Training
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train Logistic Regression model
+lr_model = LogisticRegression()
+lr_model.fit(X_train, y_train)
+
+# Train Naive Bayes model
+nb_model = MultinomialNB()
+nb_model.fit(X_train, y_train)
+
+# 4. Model Evaluation
+
+# Logistic Regression Evaluation
+y_pred_lr = lr_model.predict(X_test)
+print("Logistic Regression Performance:")
+print(classification_report(y_test, y_pred_lr))
+print(f"Accuracy: {accuracy_score(y_test, y_pred_lr):.2f}")
+
+# Naive Bayes Evaluation
+y_pred_nb = nb_model.predict(X_test)
+print("Naive Bayes Performance:")
+print(classification_report(y_test, y_pred_nb))
+print(f"Accuracy: {accuracy_score(y_test, y_pred_nb):.2f}")
