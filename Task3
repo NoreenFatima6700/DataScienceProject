@@ -1,0 +1,61 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import classification_report, accuracy_score
+
+# 1: Data Preprocessing
+
+data = pd.read_csv('D:\\Others\\Data_Science\\Python\\creditcard.csv')  # Ensure the dataset has 'Class' for labels
+print(data['Class'].value_counts())  # Check class imbalance
+
+# Split features and target
+X = data.drop('Class', axis=1)
+y = data['Class']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Apply SMOTE to balance the training data
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+print(pd.Series(y_train_smote).value_counts())  # Verify balance
+
+
+# 2: Model Training
+
+# Train Random Forest model
+rf_model = RandomForestClassifier(random_state=42)
+rf_model.fit(X_train_smote, y_train_smote)
+
+# Train Gradient Boosting model
+gb_model = GradientBoostingClassifier(random_state=42)
+gb_model.fit(X_train_smote, y_train_smote)
+
+
+# 3: Model Evaluation
+
+# Evaluate Random Forest
+y_pred_rf = rf_model.predict(X_test)
+print("Random Forest Performance:")
+print(classification_report(y_test, y_pred_rf))
+print(f"Accuracy: {accuracy_score(y_test, y_pred_rf):.2f}")
+
+# Evaluate Gradient Boosting
+y_pred_gb = gb_model.predict(X_test)
+print("Gradient Boosting Performance:")
+print(classification_report(y_test, y_pred_gb))
+print(f"Accuracy: {accuracy_score(y_test, y_pred_gb):.2f}")
+
+
+# 4: Testing Interface
+
+def test_fraud_detection(model, input_data):
+    prediction = model.predict([input_data])
+    return "Fraudulent Transaction" if prediction[0] == 1 else "Legitimate Transaction"
+
+# Example usage:
+print("Enter transaction details:")
+transaction_input = [500, 0.2, -1.5, 1.1, 0.3, ...] 
+result = test_fraud_detection(rf_model, transaction_input)
+print(result)
