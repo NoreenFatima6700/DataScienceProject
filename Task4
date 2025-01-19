@@ -5,6 +5,7 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 
+
 # 1: Data Preprocessing
 
 data = pd.read_csv('D:\\Others\\Data_Science\\Python\\HousingData.csv')
@@ -45,23 +46,36 @@ xgb_model = xgb.XGBRegressor(objective ='reg:squarederror', colsample_bytree = 0
                 max_depth = 5, alpha = 10, n_estimators = 10)
 xgb_model.fit(X, y)
 
-import numpy as np
-import pandas as pd
-from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
 
-# Ensure no missing values in features and target
-# Fill missing values in data
-data.fillna(data.mean(), inplace=True)
 
-# Split features and target
-X = data.drop('Price', axis=1)  # Replace 'Price' with the actual target column
-y = data['Price']
+# Check for missing values before handling
+print("Before handling NaNs:")
+print(X.isnull().sum())  # For features
+print(y.isnull().sum())  # For target
+
+# Fill missing values
+X.fillna(X.mean(), inplace=True)
+y.fillna(y.mean(), inplace=True)
+
+# Check again after handling NaNs
+print("After handling NaNs:")
+print(X.isnull().sum())  # For features
+print(y.isnull().sum())  # For target
+
+# Ensure correct feature names during training
+rf_model.fit(X, y)
+xgb_model.fit(X, y)
 
 # Predictions
 y_pred_lr = X.dot(theta[1:]) + theta[0]  # Linear Regression prediction
 y_pred_rf = rf_model.predict(X)
 y_pred_xgb = xgb_model.predict(X)
+
+# Check for NaNs in predictions
+print("Check NaNs in predictions:")
+print(np.isnan(y_pred_lr).sum())  # For Linear Regression
+print(np.isnan(y_pred_rf).sum())  # For Random Forest
+print(np.isnan(y_pred_xgb).sum())  # For XGBoost
 
 # RMSE and R² for each model
 def evaluate_model(y_true, y_pred):
@@ -78,17 +92,3 @@ rmse_xgb, r2_xgb = evaluate_model(y, y_pred_xgb)
 print(f"Linear Regression - RMSE: {rmse_lr}, R²: {r2_lr}")
 print(f"Random Forest - RMSE: {rmse_rf}, R²: {r2_rf}")
 print(f"XGBoost - RMSE: {rmse_xgb}, R²: {r2_xgb}")
-
-# 4: Feature Importance
-
-# Feature Importance for Random Forest
-feature_importance_rf = rf_model.feature_importances_
-plt.barh(X.columns, feature_importance_rf)
-plt.title('Random Forest Feature Importance')
-plt.show()
-
-# Feature Importance for XGBoost
-feature_importance_xgb = xgb_model.feature_importances_
-plt.barh(X.columns, feature_importance_xgb)
-plt.title('XGBoost Feature Importance')
-plt.show()
